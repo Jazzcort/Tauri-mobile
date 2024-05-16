@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { listen } from "@tauri-apps/api/event";
 import { Store } from "@tauri-apps/plugin-store";
 import { invoke } from "@tauri-apps/api/core";
+import Navbar from "./Navbar";
 
 export default function Home() {
     const navigate = useNavigate();
@@ -59,10 +60,6 @@ export default function Home() {
         navigate("/app");
     }
 
-    // function navigateToLogin() {
-    //     navigate("/login");
-    // }
-
     async function updateValue() {
         let val = await store.get("curValue");
         val = val ? val : 0;
@@ -84,13 +81,9 @@ export default function Home() {
         await invoke("store_data_in_app_date", { data: inputText });
     }
 
-    async function getHttpResponse() {
-        console.log(await invoke("get_http_response", {url: "https://www.google.com"}));
-    }
-
     async function handleLogOut() {
         invoke("logout").then(res => {
-            
+           navigate("/login") 
         }).catch(e => {
             alert("You are alreadt logged out")    
         })
@@ -99,6 +92,7 @@ export default function Home() {
 
     return (
         <div>
+            <Navbar />
             <h1>Home Page</h1>
             <p>{text}</p>
             <button onClick={navigateToApp}>To App</button>
@@ -114,7 +108,6 @@ export default function Home() {
             <button onClick={readAppData}>read app data</button>
             <button onClick={storeAppData}>store app data</button>
             <p>app data: {appData}</p>
-            <button onClick={getHttpResponse}>get http response</button>
             <p>{status ? "logged in" : "not logged in"}</p>
             <button onClick={handleLogOut}>Log out</button>
         </div>

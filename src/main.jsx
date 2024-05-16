@@ -13,6 +13,7 @@ import {
     Link,
 } from "react-router-dom";
 import TestingPage from "./components/TestingPage";
+import SignUpPage from "./components/SignUpPage";
 
 const router = createBrowserRouter([
     {
@@ -21,7 +22,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/login",
-        element: <LonginPage />
+        element: <LonginPage />,
     },
     {
         path: "/home",
@@ -33,8 +34,12 @@ const router = createBrowserRouter([
     },
     {
         path: "/testing",
-        element: <TestingPage />
-    }
+        element: <TestingPage />,
+    },
+    {
+        path: "/signup",
+        element: <SignUpPage />,
+    },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(

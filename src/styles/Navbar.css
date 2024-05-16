@@ -1,0 +1,20 @@
+.navbar-main {
+    color: #000000;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+}
+
+.navbar-main button {
+    box-shadow: none;
+    border-radius: 0;
+    border: none;
+}
+
+
+@media (prefers-color-scheme: dark) {
+    .navbar-main {
+        color: #ffffff;
+        background-color: #000000;
+    }
+}

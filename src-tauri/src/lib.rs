@@ -81,11 +81,13 @@ pub fn run() {
             store_data_in_app_date,
             get_http_response,
             login_with_password,
-            // login_with_session,
+            login_with_session,
             login_with_user_file,
             logout,
             check_login_state,
-            check_email
+            check_email,
+            check_username,
+            signup
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

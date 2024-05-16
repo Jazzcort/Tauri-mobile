@@ -1,0 +1,37 @@
+.error-msg {
+    color: red;
+    margin: 1px;
+}
+
+.signup-page input {
+    font-size: 1.2em;
+    /* margin-bottom: 0.5em; */
+}
+
+.signup-page label {
+    margin-top: 0.5em;
+}
+
+.signup-page {
+    height: 95vh;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.signup-page form {
+    display: flex;
+    flex-direction: column;
+    /* align-items: center; */
+}
+
+.button-area {
+    margin-top: 1em;;
+    display: flex;
+}
+
+.button-area button {
+    margin: 1em;
+    width: 100%;
+}

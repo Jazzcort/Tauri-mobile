@@ -2,6 +2,7 @@ use crate::json;
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use tauri_plugin_http::reqwest::Response;
+use core::hash;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
@@ -64,7 +65,9 @@ pub enum Error {
     #[error("already logged out")]
     AlreadyLoggedOutError,
     #[error("something went wrong at the server side")]
-    ServerError
+    ServerError,
+    #[error("serde error")]
+    SerdeError(#[from] serde_json::Error)
 }
 
 impl serde::Serialize for Error {
@@ -90,6 +93,9 @@ pub(crate) async fn login_with_password(
     auth_state: State<'_, Mutex<AuthState>>,
 ) -> Result<AuthState, Error> {
     let binding = app_handle.path().app_data_dir()?;
+    let mut hasher = Sha256::new();
+    hasher.update(password);
+    let password = format!("{:x}", hasher.finalize());
 
     match login_with_password_helper(&email, &password).await {
         Ok(session) => {
@@ -120,25 +126,46 @@ pub(crate) async fn login_with_password(
     }
 }
 
-// #[tauri::command]
-// pub(crate) async fn login_with_session(
-//     cookie_store_mut: State<'_, Arc<CookieStoreMutex>>,
-// ) -> Result<String, Error> {
-//     let client = reqwest::Client::builder()
-//         .cookie_provider(Arc::clone(&cookie_store_mut))
-//         .build()
-//         .unwrap();
+#[tauri::command]
+pub(crate) async fn login_with_session(app_handle: tauri::AppHandle, auth_state: State<'_, Mutex<AuthState>>) -> Result<bool, Error> {
+    let binding = app_handle.path().app_data_dir()?;
+    let session_file_path = PathBuf::from(binding).join(".session.json");
 
-//     let res = client
-//         .post(format!("{}/user/loginSession", DEV_URL))
-//         .send()
-//         .await
-//         .unwrap();
+    let mut session_file = File::open(session_file_path)?;
+    let mut file_str = String::new();
+    session_file.read_to_string(&mut file_str)?;
 
-//     dbg!(res.status());
+    let session = serde_json::from_str::<AuthState>(&file_str)?;
 
-//     Ok("login_with_session".to_string())
-// }
+    if let Some(expiration_date) = session.expiration_date {
+        if !check_expiration(expiration_date) {
+            return Ok(false)
+        }
+    } 
+
+    let mut json = HashMap::new();
+    json.insert("session_id".to_string(), session.token.clone());
+
+    let client = reqwest::Client::new();
+
+    let res = client
+        .post(format!("{}/user/loginSession", DEV_URL))
+        .json(&json)
+        .send()
+        .await?;
+
+    match res.status().as_u16() {
+        200 => {
+            let mut auth_state_handle = auth_state.lock()?;
+            *auth_state_handle = session;
+            Ok(true)
+        }
+        _ => {
+            Ok(false)
+        }
+    }
+
+}
 
 #[tauri::command]
 pub(crate) async fn login_with_user_file(
@@ -255,9 +282,39 @@ pub(crate) async fn check_email(email: String) -> Result<bool, Error> {
     let client = reqwest::Client::new();
     let res = client.get(format!("{}/user/emailCheck/{}", DEV_URL, email)).send().await?;
     let body = res.text().await?;
-    dbg!(body);
 
-    Ok(true)
+    match body.as_str() {
+        "0" => {
+            Ok(false)
+        }
+        "1" => {
+            Ok(true)
+        }
+        _ => {
+            Err(Error::ServerError)
+        }
+    }
+
+}
+
+#[tauri::command]
+pub(crate) async fn check_username(username: String) -> Result<bool, Error> {
+    let client = reqwest::Client::new();
+    let res = client.get(format!("{}/user/usernameCheck/{}", DEV_URL, username)).send().await?;
+    let body = res.text().await?;
+
+    match body.as_str() {
+        "0" => {
+            Ok(false)
+        }
+        "1" => {
+            Ok(true)
+        }
+        _ => {
+            Err(Error::ServerError)
+        }
+    }
+
 }
 
 // fn write_to_file(path: &PathBuf, data: String) -> Result<(), Error> {
